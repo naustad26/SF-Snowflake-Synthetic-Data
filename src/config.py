@@ -1,9 +1,8 @@
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
-SNOWFLAKE_ACCOUNT = os.getenv("SNOWFLAKE_ACCOUNT")
-SNOWFLAKE_USER = os.getenv("SNOWFLAKE_USER")
-SNOWFLAKE_PASSWORD = os.getenv("SNOWFLAKE_PASSWORD")
-SNOWFLAKE_WAREHOUSE = os.getenv("SNOWFLAKE_WAREHOUSE")
-SNOWFLAKE_DATABASE = os.getenv("SNOWFLAKE_DATABASE")
-SNOWFLAKE_SCHEMA = os.getenv("SNOWFLAKE_SCHEMA")
+ACCOUNT_COUNT = int(os.getenv("ACCOUNT_COUNT", 10))
+CONTACTS_PER_ACCOUNT = int(os.getenv("CONTACTS_PER_ACCOUNT", 3))
+OUTPUT_DIR = os.getenv("OUTPUT_DIR", "output")
