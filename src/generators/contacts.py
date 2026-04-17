@@ -43,10 +43,34 @@ def domain_from_website(website: str) -> str:
         .strip("/")
     )
 
-def weighted_contact_status() -> str:
+def weighted_contact_status(account: dict) -> str:
+    if account["Account_Status__c"] == "Inactive":
+        return random.choices(
+            CONTACT_STATUSES,
+            weights=[35, 1, 5, 8, 10, 30, 4, 7],
+            k=1,
+        )[0]
+
     return random.choices(
         CONTACT_STATUSES,
-        weights=[70, 1, 2, 3, 5, 7, 4, 8],
+        weights=[88, 1, 2, 2, 2, 1, 1, 3],
+        k=1,
+    )[0]
+
+
+def weighted_contact_record_type(account: dict) -> str:
+    customer_types = account["Customer_Type__c"].split(";")
+
+    if "Boost" in customer_types or "ARN Member" in customer_types:
+        return random.choices(
+            CONTACT_RECORD_TYPES,
+            weights=[30, 50, 8, 7, 5],
+            k=1,
+        )[0]
+
+    return random.choices(
+        CONTACT_RECORD_TYPES,
+        weights=[25, 35, 20, 10, 10],
         k=1,
     )[0]
 
@@ -83,8 +107,8 @@ def generate_contact_for_account(account: dict) -> dict:
         "AccountSyntheticId": account["SyntheticId"],
         "AccountName": account["Name"],
         "ContactOwnerName": random.choice(CONTACT_OWNERS),
-        "ContactRecordType": random.choice(CONTACT_RECORD_TYPES),
-        "Physican_Status": weighted_contact_status(),
+        "ContactRecordType": weighted_contact_record_type(account),
+        "Physican_Status": weighted_contact_status(account),
     }
 
 def generate_contacts_for_accounts(
