@@ -9,8 +9,6 @@ CUSTOMER_TYPES = [
     "Boost",
     "Marketing",
     "Other",
-    "Consulting",
-    "Billing",
 ]
 
 COMPANY_SUFFIXES = [
@@ -71,9 +69,7 @@ def generate_notes() -> str:
     return random.choice(templates)
 
 
-def generate_account() -> dict:
-    name = generate_company_name()
-
+def generate_account_addresses() -> tuple[dict, bool]:
     billing_street = fake.street_address()
     billing_city = fake.city()
     billing_state = fake.state_abbr()
@@ -92,11 +88,7 @@ def generate_account() -> dict:
         shipping_state = fake.state_abbr()
         shipping_postal = fake.postcode()
 
-    return {
-        "SyntheticId": next_id("ACC"),
-        "Name": name,
-        "Phone": generate_phone(),
-        "Website": generate_website(name),
+    addresses = {
         "BillingStreet": billing_street,
         "BillingCity": billing_city,
         "BillingState": billing_state,
@@ -105,6 +97,19 @@ def generate_account() -> dict:
         "ShippingCity": shipping_city,
         "ShippingState": shipping_state,
         "ShippingPostalCode": shipping_postal,
+    }
+
+    return addresses, same_shipping
+
+
+def generate_account_fields(name: str) -> tuple[dict, bool]:
+    addresses, same_shipping = generate_account_addresses()
+
+    fields = {
+        "Name": name,
+        "Phone": generate_phone(),
+        "Website": generate_website(name),
+        **addresses,
         "Account_Status__c": weighted_account_status(),
         "Customer_Type__c": generate_customer_type(),
         "Billing_Type__c": weighted_billing_type(),
@@ -112,6 +117,26 @@ def generate_account() -> dict:
         "Software_EMR_being_used__c": random.choice(EMR_OPTIONS),
         "Number_of_Years_in_Business__c": random.randint(1, 40),
         "Other_notes__c": generate_notes(),
+    }
+
+    return fields, same_shipping
+
+
+def generate_account() -> dict:
+    synthetic_id = next_id("ACC")
+    name = generate_company_name()
+    fields, same_shipping = generate_account_fields(name)
+
+    return {
+        "object": "Account",
+        "synthetic_id": synthetic_id,
+        "fields": {
+            "Synthetic_Id__c": synthetic_id,
+            **fields,
+        },
+        "meta": {
+            "same_shipping_as_billing": same_shipping,
+        },
     }
 
 
