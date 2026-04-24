@@ -35,9 +35,22 @@ EMR_OPTIONS = [
     "Other",
 ]
 
+LOCATION_SUFFIXES = [
+    "Flint",
+    "Grand Blanc",
+    "Lansing",
+    "Detroit",
+    "Ann Arbor",
+    "Saginaw",
+    "Bay City",
+    "Troy",
+    "Livonia",
+    "Novi",
+]
+
 
 def weighted_account_status() -> str:
-    return random.choices(ACCOUNT_STATUSES, weights=[85, 15], k=1)[0]
+    return random.choices(ACCOUNT_STATUSES, weights=[95, 5], k=1)[0]
 
 
 def weighted_billing_type() -> str:
@@ -120,6 +133,66 @@ def generate_account_fields(name: str) -> tuple[dict, bool]:
     }
 
     return fields, same_shipping
+
+
+def generate_location_account(parent_account: dict, city: str) -> dict:
+    synthetic_id = next_id("ACC")
+    parent_fields = parent_account["fields"]
+    parent_name = parent_fields["Name"]
+
+    name = f"{parent_name} - {city}"
+
+    fields, same_shipping = generate_account_fields(name)
+
+    # Keep customer type similar to parent for realism
+    fields["Customer_Type__c"] = parent_fields["Customer_Type__c"]
+    fields["Account_Status__c"] = parent_fields["Account_Status__c"]
+
+    return {
+        "object": "Account",
+        "synthetic_id": synthetic_id,
+        "parent_refs": {
+            "Account": parent_account["synthetic_id"],
+        },
+        "fields": {
+            "Synthetic_Id__c": synthetic_id,
+            **fields,
+        },
+        "meta": {
+            "is_location_account": True,
+            "parent_account_name": parent_name,
+            "same_shipping_as_billing": same_shipping,
+        },
+    }
+
+
+def generate_account_hierarchy(
+    parent_count: int,
+    min_children_per_parent: int = 0,
+    max_children_per_parent: int = 4,
+) -> tuple[list[dict], list[dict]]:
+    parent_accounts: list[dict] = []
+    child_accounts: list[dict] = []
+
+    for _ in range(parent_count):
+        parent = generate_account()
+
+        child_count = random.randint(min_children_per_parent, max_children_per_parent)
+        parent["fields"]["Child_Accounts__c"] = child_count
+        parent["meta"]["is_parent_account"] = True
+
+        parent_accounts.append(parent)
+
+        if child_count > 0:
+            cities = random.sample(
+                LOCATION_SUFFIXES,
+                k=min(child_count, len(LOCATION_SUFFIXES)),
+            )
+
+            for city in cities:
+                child_accounts.append(generate_location_account(parent, city))
+
+    return parent_accounts, child_accounts
 
 
 def generate_account() -> dict:
