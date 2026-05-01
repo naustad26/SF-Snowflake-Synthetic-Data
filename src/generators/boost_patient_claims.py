@@ -7,9 +7,6 @@ fake = Faker()
 CLAIM_TYPES = [
     "AA",
     "WC",
-    "PIP",
-    "Commercial",
-    "CI",
     "UN",
     "OA",
 ]
