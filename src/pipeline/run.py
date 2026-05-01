@@ -24,6 +24,12 @@ from src.pipeline.contacts import (
     upsert_contacts_step,
 )
 
+from src.pipeline.boost_patient_claims import (
+    generate_boost_patient_claims_step,
+    resolve_boost_patient_claims_step,
+    upsert_boost_patient_claims_step,
+)
+
 from src.pipeline.exports import export_generated_records_step
 
 
@@ -32,9 +38,11 @@ def run_pipeline() -> None:
 
     context = PipelineContext()
 
+    # Generate synthetic records
     generate_account_hierarchy_step(context)
     generate_boost_accounts_step(context)
     generate_contacts_step(context)
+    generate_boost_patient_claims_step(context)
 
     export_generated_records_step(context)
 
@@ -44,23 +52,27 @@ def run_pipeline() -> None:
 
     context.sf = get_salesforce_client()
 
-    # Boost Accounts first because Accounts point to them.
+    # Boost Accounts first (dependency root)
     upsert_boost_accounts_step(context)
 
-    # Parent Accounts next because child Accounts point to them.
+    # IMPORTANT: requires boost_accounts ID map to exist
+    resolve_boost_patient_claims_step(context)
+    upsert_boost_patient_claims_step(context)
+
+    # Parent Accounts
     resolve_parent_accounts_boost_lookup_step(context)
     upsert_parent_accounts_step(context)
 
-    # Child Accounts next.
+    # Child Accounts
     resolve_child_accounts_step(context)
     upsert_child_accounts_step(context)
 
-    # Fetch all Account IDs once parent + child Accounts exist.
+    # Fetch Account IDs
     fetch_all_account_ids_step(context)
 
-    # Contacts need AccountId.
+    # Contacts
     resolve_contacts_step(context)
     upsert_contacts_step(context)
 
-    # Boost Account final lookup updates need Account + Contact IDs.
+    # Final Boost Account updates
     update_boost_account_lookup_fields_step(context)
