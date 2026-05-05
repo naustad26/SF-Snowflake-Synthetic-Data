@@ -49,6 +49,7 @@ def generate_boost_patient_claim_records(boost_accounts):
 
             records.append({
                 "Synthetic_Id__c": synthetic_id,
+                "Claim_Number_ID__c": claim_name,
                 "Name": claim_name,
                 "Claim_Type__c": claim_type,
 
@@ -58,7 +59,7 @@ def generate_boost_patient_claim_records(boost_accounts):
                 "DOI__c": doi.isoformat(),
                 "First_DOS__c": first_dos.isoformat(),
 
-                "Claim_Type__c": random.choice(CLAIM_TYPES),
+                
 
                 "Total_Billed_Charges__c": round(random.uniform(500, 50000), 2),
                 "Bills__c": bill_count,

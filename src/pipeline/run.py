@@ -1,6 +1,6 @@
 from src.config import SEED, LOAD_TO_SALESFORCE
 from src.generators.base import set_seed
-from src.loaders.salesforce import get_salesforce_client
+from src.loaders.salesforce import fetch_id_map, get_salesforce_client
 from src.pipeline.context import PipelineContext
 
 from src.pipeline.accounts import (
@@ -32,6 +32,12 @@ from src.pipeline.boost_patient_claims import (
 
 from src.pipeline.exports import export_generated_records_step
 
+from src.pipeline.boost import (
+    generate_boost_step,
+    resolve_boost_step,
+    upsert_boost_step,
+)
+
 
 def run_pipeline() -> None:
     set_seed(SEED)
@@ -44,6 +50,7 @@ def run_pipeline() -> None:
     generate_contacts_step(context)
     generate_boost_patient_claims_step(context)
 
+    generate_boost_step(context)
     export_generated_records_step(context)
 
     if not LOAD_TO_SALESFORCE:
@@ -58,6 +65,34 @@ def run_pipeline() -> None:
     # IMPORTANT: requires boost_accounts ID map to exist
     resolve_boost_patient_claims_step(context)
     upsert_boost_patient_claims_step(context)
+
+    boost_patient_claim_synthetic_ids = [
+        claim["Synthetic_Id__c"]
+        for claim in context.get_records("boost_patient_claims")
+    ]
+
+    context.set_id_map(
+        "boost_patient_claims",
+        fetch_id_map(
+            context.sf,
+            "Boost_Patient_Claim__c",
+            "Synthetic_Id__c",
+            boost_patient_claim_synthetic_ids,
+        )
+    )
+
+    print("Boost Patient Claim ID map count:",
+        len(context.get_id_map("boost_patient_claims")))
+
+    print("Boost Patient Claim ID map sample:",
+        list(context.get_id_map("boost_patient_claims").items())[:5])
+
+    print("Boost claim refs sample:",
+        [r["_boost_patient_claim_synthetic_id"]
+        for r in context.get_records("boost")[:5]])
+
+    resolve_boost_step(context)
+    upsert_boost_step(context)
 
     # Parent Accounts
     resolve_parent_accounts_boost_lookup_step(context)

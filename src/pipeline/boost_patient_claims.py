@@ -29,9 +29,19 @@ def upsert_boost_patient_claims_step(context):
         print("No Boost Patient Claims to upsert")
         return
 
-    context.sf.bulk.Boost_Patient_Claim__c.upsert(
+    results = context.sf.bulk.Boost_Patient_Claim__c.upsert(
         records,
         "Synthetic_Id__c"
     )
 
-    print(f"Upserted {len(records)} Boost Patient Claims")
+    successes = [r for r in results if r.get("success")]
+    failures = [r for r in results if not r.get("success")]
+
+    print(
+        f"Boost Patient Claim upsert complete. "
+        f"Success: {len(successes)}, Failed: {len(failures)}"
+    )
+
+    if failures:
+        print("Boost Patient Claim failures:")
+        print(failures[:5])

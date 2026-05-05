@@ -29,3 +29,15 @@ def export_generated_records_step(context) -> None:
         "contacts_raw.json",
         OUTPUT_DIR,
     )
+
+    export_raw_records(
+        context.get_records("boost_patient_claims"),
+        "boost_patient_claims_raw.json",
+        OUTPUT_DIR,
+    )
+
+    export_raw_records(
+        context.get_records("boost"),
+        "boost_raw.json",
+        OUTPUT_DIR,
+    )
