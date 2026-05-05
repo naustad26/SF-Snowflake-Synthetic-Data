@@ -73,6 +73,13 @@ from src.pipeline.payor_contacts import (
     fetch_payor_contact_ids_step,
 )
 
+from src.pipeline.deposits import (
+    generate_deposits_step,
+    resolve_deposits_step,
+    upsert_deposits_step,
+    fetch_deposit_ids_step,
+)
+
 def run_pipeline() -> None:
     set_seed(SEED)
 
@@ -92,8 +99,8 @@ def run_pipeline() -> None:
     generate_boost_step(context)
     generate_lines_step(context)
 
-    # ARN Payor Master can be generated once payor account synthetic IDs exist.
-    # It is resolved later after Payor/Bill Review Account Salesforce IDs exist.
+    generate_deposits_step(context)
+
     generate_arn_payor_master_step(context)
 
     export_generated_records_step(context)
@@ -143,6 +150,11 @@ def run_pipeline() -> None:
             boost_synthetic_ids,
         )
     )
+
+    # Deposits
+    resolve_deposits_step(context)
+    upsert_deposits_step(context)
+    fetch_deposit_ids_step(context)
 
     resolve_lines_step(context)
     upsert_lines_step(context)
