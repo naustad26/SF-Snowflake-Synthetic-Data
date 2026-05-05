@@ -59,6 +59,19 @@ from src.pipeline.arn_payors import (
     fetch_arn_payor_ids_step,
 )
 
+from src.pipeline.payor_accounts import (
+    generate_payor_accounts_step,
+    resolve_payor_accounts_step,
+    upsert_payor_accounts_step,
+    fetch_payor_account_ids_step,
+)
+
+from src.pipeline.payor_contacts import (
+    generate_payor_contacts_step,
+    resolve_payor_contacts_step,
+    upsert_payor_contacts_step,
+    fetch_payor_contact_ids_step,
+)
 
 def run_pipeline() -> None:
     set_seed(SEED)
@@ -67,12 +80,22 @@ def run_pipeline() -> None:
 
     # Generate synthetic records
     generate_account_hierarchy_step(context)
+
+    # Separate non-clinic Account lane for payors / bill review companies
+    generate_payor_accounts_step(context)
+
     generate_boost_accounts_step(context)
     generate_contacts_step(context)
-    generate_boost_patient_claims_step(context)
+    generate_payor_contacts_step(context)
 
+    generate_boost_patient_claims_step(context)
     generate_boost_step(context)
     generate_lines_step(context)
+
+    # ARN Payor Master can be generated once payor account synthetic IDs exist.
+    # It is resolved later after Payor/Bill Review Account Salesforce IDs exist.
+    generate_arn_payor_master_step(context)
+
     export_generated_records_step(context)
 
     if not LOAD_TO_SALESFORCE:
@@ -132,11 +155,20 @@ def run_pipeline() -> None:
     resolve_child_accounts_step(context)
     upsert_child_accounts_step(context)
 
-    # Fetch Account IDs
+    # Fetch clinic/client Account IDs
     fetch_all_account_ids_step(context)
 
+    # Payor / Bill Review Accounts
+    resolve_payor_accounts_step(context)
+    upsert_payor_accounts_step(context)
+    fetch_payor_account_ids_step(context)
+
+    # Payor Contacts
+    resolve_payor_contacts_step(context)
+    upsert_payor_contacts_step(context)
+    fetch_payor_contact_ids_step(context)
+
     # ARN Payor Master
-    generate_arn_payor_master_step(context)
     resolve_arn_payor_master_step(context)
     upsert_arn_payor_master_step(context)
     fetch_arn_payor_master_ids_step(context)

@@ -81,18 +81,16 @@ def generate_type_value() -> str:
     return ";".join(selected_types)
 
 
-def generate_arn_payor_master_records(accounts, count: int):
+def generate_arn_payor_master_records(payor_accounts, count: int):
     records = []
 
-    if not accounts:
-        raise ValueError("Cannot generate ARN Payor Master records without Account records.")
+    if not payor_accounts:
+        raise ValueError("Cannot generate ARN Payor Master records without Payor/Bill Review Accounts.")
 
     for i in range(count):
-        account = random.choice(accounts)
-        bill_review_account = random.choice(accounts)
+        payor_account = random.choice(payor_accounts)
 
-        account_sid = account["synthetic_id"]
-        bill_review_account_sid = bill_review_account["synthetic_id"]
+        payor_account_sid = payor_account["synthetic_id"]
 
         submission_method = random.choice(PREFERRED_SUBMISSION_METHODS)
 
@@ -103,11 +101,10 @@ def generate_arn_payor_master_records(accounts, count: int):
         fax = fake.numerify(text="###-###-####")
         phone = fake.numerify(text="###-###-####")
 
-        preferred_method_email = (
-            email_for_bill_submission
-            if submission_method == "Email"
-            else fake.company_email()
-        )
+        if submission_method == "Email":
+            preferred_address = email_for_bill_submission
+        else:
+            preferred_address = None
 
         synthetic_id = f"APM-{i + 1:06d}"
 
@@ -145,7 +142,7 @@ def generate_arn_payor_master_records(accounts, count: int):
             )[0],
 
             "Preferred_Method_to_Submit_Claims__c": submission_method,
-            "Preferred_Method_Fax_or_Email_Address__c": preferred_method_email,
+            "Preferred_Method_Fax_or_Email_Address__c": preferred_address,
 
             "Claim_Specific__c": random.choice(CLAIM_SPECIFIC_VALUES),
         }
@@ -155,8 +152,7 @@ def generate_arn_payor_master_records(accounts, count: int):
             "synthetic_id": synthetic_id,
             "fields": fields,
             "meta": {
-                "account_synthetic_id": account_sid,
-                "bill_review_account_synthetic_id": bill_review_account_sid,
+                "payor_account_synthetic_id": payor_account_sid,
             },
         })
 

@@ -5,10 +5,10 @@ from src.pipeline.helpers import print_results
 
 
 def generate_arn_payor_master_step(context) -> None:
-    accounts = context.get_records("all_accounts")
+    payor_accounts = context.get_records("payor_accounts")
 
     arn_payor_master_records = generate_arn_payor_master_records(
-        accounts=accounts,
+        payor_accounts=payor_accounts,
         count=ARN_PAYOR_MASTER_COUNT,
     )
 
@@ -19,30 +19,27 @@ def generate_arn_payor_master_step(context) -> None:
 
 def resolve_arn_payor_master_step(context) -> None:
     arn_payor_master_records = context.get_records("arn_payor_master")
-    account_id_map = context.get_id_map("all_accounts")
+    payor_account_id_map = context.get_id_map("payor_accounts")
 
     resolved_records = []
 
     for record in arn_payor_master_records:
-        account_synthetic_id = record["meta"]["account_synthetic_id"]
-        bill_review_account_synthetic_id = record["meta"]["bill_review_account_synthetic_id"]
+        payor_account_synthetic_id = record["meta"]["payor_account_synthetic_id"]
 
-        account_id = account_id_map.get(account_synthetic_id)
-        bill_review_account_id = account_id_map.get(bill_review_account_synthetic_id)
+        payor_account_id = payor_account_id_map.get(payor_account_synthetic_id)
 
-        if not account_id:
+        if not payor_account_id:
             raise ValueError(
-                f"Missing Account ID for ARN Payor Master Account__c: {account_synthetic_id}"
+                "Missing Payor/Bill Review Account ID for ARN Payor Master: "
+                f"{payor_account_synthetic_id}"
             )
 
-        if not bill_review_account_id:
-            raise ValueError(
-                "Missing Account ID for ARN Payor Master "
-                f"ARN_Payor_Bill_Review_Account__c: {bill_review_account_synthetic_id}"
-            )
+        record["fields"]["Account__c"] = payor_account_id
 
-        record["fields"]["Account__c"] = account_id
-        record["fields"]["ARN_Payor_Bill_Review_Account__c"] = bill_review_account_id
+        # Based on your explanation, this is likely the same Account.
+        # If these fields mean different things later, split them into two
+        # different payor account references.
+        record["fields"]["ARN_Payor_Bill_Review_Account__c"] = payor_account_id
 
         resolved_records.append(record)
 
