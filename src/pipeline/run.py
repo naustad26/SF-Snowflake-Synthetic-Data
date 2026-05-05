@@ -36,6 +36,7 @@ from src.pipeline.boost import (
     generate_boost_step,
     resolve_boost_step,
     upsert_boost_step,
+    update_boost_arn_payor_lookup_step,
 )
 
 from src.pipeline.lines import (
@@ -49,6 +50,13 @@ from src.pipeline.arn_payor_master import (
     resolve_arn_payor_master_step,
     upsert_arn_payor_master_step,
     fetch_arn_payor_master_ids_step,
+)
+
+from src.pipeline.arn_payors import (
+    generate_arn_payors_step,
+    resolve_arn_payors_step,
+    upsert_arn_payors_step,
+    fetch_arn_payor_ids_step,
 )
 
 
@@ -132,6 +140,15 @@ def run_pipeline() -> None:
     resolve_arn_payor_master_step(context)
     upsert_arn_payor_master_step(context)
     fetch_arn_payor_master_ids_step(context)
+
+    # ARN Payors
+    generate_arn_payors_step(context)
+    resolve_arn_payors_step(context)
+    upsert_arn_payors_step(context)
+    fetch_arn_payor_ids_step(context)
+
+    # Update Boost ARN Payor lookup
+    update_boost_arn_payor_lookup_step(context)
 
     # Contacts
     resolve_contacts_step(context)

@@ -1,5 +1,9 @@
 from src.generators.boost import generate_boost_records
+import random
 
+from src.config import SYNTHETIC_ID_FIELD
+from src.loaders.salesforce import upsert_records
+from src.pipeline.helpers import print_results
 
 def generate_boost_step(context):
     claims = context.get_records("boost_patient_claims")
@@ -50,3 +54,38 @@ def upsert_boost_step(context):
     if failures:
         print("Boost failures:")
         print(failures[:5])
+
+def update_boost_arn_payor_lookup_step(context) -> None:
+    boost_records = context.get_records("boost")
+    arn_payor_id_map = context.get_id_map("arn_payors")
+
+    if not arn_payor_id_map:
+        raise ValueError("Cannot update Boost ARN_Payor__c because arn_payors ID map is empty.")
+
+    arn_payor_ids = list(arn_payor_id_map.values())
+
+    boost_updates = []
+
+    for boost in boost_records:
+        boost_synthetic_id = boost["Synthetic_Id__c"]
+
+        boost_updates.append({
+            "object": "Boost__c",
+            "synthetic_id": boost_synthetic_id,
+            "fields": {
+                SYNTHETIC_ID_FIELD: boost_synthetic_id,
+                "ARN_Payor__c": random.choice(arn_payor_ids),
+            },
+            "meta": {},
+        })
+
+    print("Updating Boost ARN Payor lookup fields...")
+
+    results = upsert_records(
+        sf=context.sf,
+        object_name="Boost__c",
+        external_id_field=SYNTHETIC_ID_FIELD,
+        records=boost_updates,
+    )
+
+    print_results("Boost ARN Payor lookup update", results)
