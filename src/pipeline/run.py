@@ -38,6 +38,12 @@ from src.pipeline.boost import (
     upsert_boost_step,
 )
 
+from src.pipeline.lines import (
+    generate_lines_step,
+    resolve_lines_step,
+    upsert_lines_step,
+)
+
 
 def run_pipeline() -> None:
     set_seed(SEED)
@@ -51,6 +57,7 @@ def run_pipeline() -> None:
     generate_boost_patient_claims_step(context)
 
     generate_boost_step(context)
+    generate_lines_step(context)
     export_generated_records_step(context)
 
     if not LOAD_TO_SALESFORCE:
@@ -81,18 +88,26 @@ def run_pipeline() -> None:
         )
     )
 
-    print("Boost Patient Claim ID map count:",
-        len(context.get_id_map("boost_patient_claims")))
-
-    print("Boost Patient Claim ID map sample:",
-        list(context.get_id_map("boost_patient_claims").items())[:5])
-
-    print("Boost claim refs sample:",
-        [r["_boost_patient_claim_synthetic_id"]
-        for r in context.get_records("boost")[:5]])
-
     resolve_boost_step(context)
     upsert_boost_step(context)
+
+    boost_synthetic_ids = [
+        boost["Synthetic_Id__c"]
+        for boost in context.get_records("boost")
+    ]
+
+    context.set_id_map(
+        "boost",
+        fetch_id_map(
+            context.sf,
+            "Boost__c",
+            "Synthetic_Id__c",
+            boost_synthetic_ids,
+        )
+    )
+
+    resolve_lines_step(context)
+    upsert_lines_step(context)
 
     # Parent Accounts
     resolve_parent_accounts_boost_lookup_step(context)
