@@ -44,6 +44,13 @@ from src.pipeline.lines import (
     upsert_lines_step,
 )
 
+from src.pipeline.arn_payor_master import (
+    generate_arn_payor_master_step,
+    resolve_arn_payor_master_step,
+    upsert_arn_payor_master_step,
+    fetch_arn_payor_master_ids_step,
+)
+
 
 def run_pipeline() -> None:
     set_seed(SEED)
@@ -119,6 +126,12 @@ def run_pipeline() -> None:
 
     # Fetch Account IDs
     fetch_all_account_ids_step(context)
+
+    # ARN Payor Master
+    generate_arn_payor_master_step(context)
+    resolve_arn_payor_master_step(context)
+    upsert_arn_payor_master_step(context)
+    fetch_arn_payor_master_ids_step(context)
 
     # Contacts
     resolve_contacts_step(context)
