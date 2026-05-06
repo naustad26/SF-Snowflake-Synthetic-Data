@@ -80,6 +80,13 @@ from src.pipeline.deposits import (
     fetch_deposit_ids_step,
 )
 
+from src.pipeline.incoming_check_payments import (
+    generate_incoming_check_payments_step,
+    resolve_incoming_check_payments_step,
+    upsert_incoming_check_payments_step,
+    fetch_incoming_check_payment_ids_step,
+)
+
 def run_pipeline() -> None:
     set_seed(SEED)
 
@@ -98,6 +105,7 @@ def run_pipeline() -> None:
     generate_boost_patient_claims_step(context)
     generate_boost_step(context)
     generate_lines_step(context)
+    generate_incoming_check_payments_step(context)
 
     generate_deposits_step(context)
 
@@ -156,6 +164,12 @@ def run_pipeline() -> None:
     upsert_deposits_step(context)
     fetch_deposit_ids_step(context)
 
+    # Incoming Check Payments
+    resolve_incoming_check_payments_step(context)
+    upsert_incoming_check_payments_step(context)
+    fetch_incoming_check_payment_ids_step(context)
+
+    # Lines
     resolve_lines_step(context)
     upsert_lines_step(context)
 
