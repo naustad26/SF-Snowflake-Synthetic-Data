@@ -87,6 +87,14 @@ from src.pipeline.incoming_check_payments import (
     fetch_incoming_check_payment_ids_step,
 )
 
+from src.pipeline.boost_ticket import (
+    generate_boost_ticket_step,
+    resolve_boost_ticket_step,
+    upsert_boost_ticket_step,
+    fetch_boost_ticket_ids_step,
+    update_boost_ticket_lookup_step,
+)
+
 def run_pipeline() -> None:
     set_seed(SEED)
 
@@ -104,6 +112,7 @@ def run_pipeline() -> None:
 
     generate_boost_patient_claims_step(context)
     generate_boost_step(context)
+    generate_boost_ticket_step(context)
     generate_lines_step(context)
     generate_incoming_check_payments_step(context)
 
@@ -204,6 +213,11 @@ def run_pipeline() -> None:
     resolve_arn_payors_step(context)
     upsert_arn_payors_step(context)
     fetch_arn_payor_ids_step(context)
+
+    resolve_boost_ticket_step(context)
+    upsert_boost_ticket_step(context)
+    fetch_boost_ticket_ids_step(context)
+    update_boost_ticket_lookup_step(context)
 
     # Update Boost ARN Payor lookup
     update_boost_arn_payor_lookup_step(context)
