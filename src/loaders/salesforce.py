@@ -1,7 +1,15 @@
 import os
 from typing import Any
+
 from dotenv import load_dotenv
 from simple_salesforce import Salesforce
+
+from src.config import (
+    SALESFORCE_BULK_UPSERT_ENABLED,
+    SALESFORCE_BULK_BATCH_SIZE,
+    SALESFORCE_BULK_USE_SERIAL,
+    SALESFORCE_BULK_UPSERT_EXCLUDED_OBJECTS,
+)
 
 
 load_dotenv()
@@ -37,7 +45,69 @@ def get_salesforce_client() -> Salesforce:
     return Salesforce(**login_kwargs)
 
 
-def upsert_records(
+def _build_bulk_payload(records: list[dict]) -> list[dict[str, Any]]:
+    """
+    Bulk API upsert requires the external ID field to be present in each row.
+    So unlike REST upsert, do not remove the external ID from the payload.
+    """
+    return [
+        dict(record["fields"])
+        for record in records
+    ]
+
+
+def _normalize_bulk_results(
+    records: list[dict],
+    raw_results: list[dict],
+    external_id_field: str,
+) -> list[dict[str, Any]]:
+    normalized_results: list[dict[str, Any]] = []
+
+    for record, raw_result in zip(records, raw_results):
+        synthetic_id = record["fields"][external_id_field]
+        success = bool(raw_result.get("success"))
+
+        errors = raw_result.get("errors") or []
+
+        normalized_results.append({
+            "synthetic_id": synthetic_id,
+            "success": success,
+            "response": raw_result if success else None,
+            "error": "; ".join(str(error) for error in errors) if errors else "",
+            "raw": raw_result,
+        })
+
+    return normalized_results
+
+
+def bulk_upsert_records(
+    sf: Salesforce,
+    object_name: str,
+    external_id_field: str,
+    records: list[dict],
+) -> list[dict[str, Any]]:
+    if not records:
+        return []
+
+    bulk_object = getattr(sf.bulk, object_name)
+
+    payload = _build_bulk_payload(records)
+
+    raw_results = bulk_object.upsert(
+        payload,
+        external_id_field,
+        batch_size=SALESFORCE_BULK_BATCH_SIZE,
+        use_serial=SALESFORCE_BULK_USE_SERIAL,
+    )
+
+    return _normalize_bulk_results(
+        records=records,
+        raw_results=raw_results,
+        external_id_field=external_id_field,
+    )
+
+
+def rest_upsert_records(
     sf: Salesforce,
     object_name: str,
     external_id_field: str,
@@ -49,6 +119,9 @@ def upsert_records(
     for record in records:
         synthetic_id = record["fields"][external_id_field]
         payload = dict(record["fields"])
+
+        # REST upsert identifies the record through the URL, so the external ID
+        # does not need to be included in the body.
         payload.pop(external_id_field, None)
 
         try:
@@ -60,16 +133,46 @@ def upsert_records(
                 "synthetic_id": synthetic_id,
                 "success": True,
                 "response": response,
+                "error": "",
             })
         except Exception as exc:
             results.append({
                 "synthetic_id": synthetic_id,
                 "success": False,
+                "response": None,
                 "error": str(exc),
             })
 
     return results
 
+def upsert_records(
+    sf: Salesforce,
+    object_name: str,
+    external_id_field: str,
+    records: list[dict],
+) -> list[dict[str, Any]]:
+    if not records:
+        return []
+
+    should_use_bulk = (
+        SALESFORCE_BULK_UPSERT_ENABLED
+        and object_name not in SALESFORCE_BULK_UPSERT_EXCLUDED_OBJECTS
+    )
+
+    if should_use_bulk:
+        return bulk_upsert_records(
+            sf=sf,
+            object_name=object_name,
+            external_id_field=external_id_field,
+            records=records,
+        )
+
+    return rest_upsert_records(
+        sf=sf,
+        object_name=object_name,
+        external_id_field=external_id_field,
+        records=records,
+    )
 
 def fetch_id_map(
     sf: Salesforce,

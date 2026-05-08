@@ -1,5 +1,5 @@
 import random
-from datetime import timedelta
+from datetime import date, timedelta
 from faker import Faker
 
 fake = Faker()
@@ -15,25 +15,18 @@ DEPOSIT_STATUSES = [
 
 def generate_deposit_id(index: int) -> str:
     """
-    Deposit_ID__c is Text(10), External ID, Unique.
-    Real examples:
-        032626 EFT
-        1022
-        847
-
-    Keep Name and Deposit_ID__c matching because org automation appears
-    to copy Name into Deposit_ID__c.
+    Deposit_ID__c max length is 10.
+    Name and Deposit_ID__c should match.
     """
-    patterns = [
-        # MMDDYY EFT, exactly 10 chars
-        lambda: fake.date_between(start_date="-180d", end_date="today").strftime("%m%d%y") + " EFT",
+    if index % 3 == 0:
+        base_date = date.today() - timedelta(days=180)
+        deposit_date = base_date + timedelta(days=index)
+        return deposit_date.strftime("%m%d%y") + " EFT"
 
-        # 3-4 digit deposit/check batch style
-        lambda: str(100 + index),
-        lambda: str(1000 + index),
-    ]
+    if index % 3 == 1:
+        return str(1000 + index)
 
-    return random.choice(patterns)()
+    return str(100 + index)
 
 
 def generate_deposit_records(count: int):

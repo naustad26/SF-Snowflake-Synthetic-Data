@@ -1,5 +1,5 @@
 def print_results(label: str, results: list[dict]) -> None:
-    success_count = sum(1 for r in results if r["success"])
+    success_count = sum(1 for r in results if r.get("success"))
     failure_count = len(results) - success_count
 
     print(f"{label} upsert complete. Success: {success_count}, Failed: {failure_count}")
@@ -7,8 +7,16 @@ def print_results(label: str, results: list[dict]) -> None:
     if failure_count:
         print(f"\n{label} failures:")
         for result in results:
-            if not result["success"]:
-                print(f"- {result['synthetic_id']}: {result['error']}")
+            if not result.get("success"):
+                synthetic_id = result.get("synthetic_id", "UNKNOWN")
+                error = (
+                    result.get("error")
+                    or result.get("errors")
+                    or result.get("raw")
+                    or "Unknown error"
+                )
+
+                print(f"- {synthetic_id}: {error}")
 
 
 def build_boost_account_id_by_parent_account(
