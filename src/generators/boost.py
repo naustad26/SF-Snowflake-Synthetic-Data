@@ -40,11 +40,23 @@ def generate_bill_id(claim_type: str, index: int) -> str:
     patterns = [
         lambda: f"{random.randint(10**10, 10**12 - 1)}{claim_type}{index:02d}",
         lambda: f"{claim_type}{random.randint(201700000, 202699999)}",
-        lambda: fake.bothify(text='??########').upper(),
+        lambda: fake.bothify(text="??########").upper(),
         lambda: f"T{random.randint(1000, 9999999999)}",
+        lambda: f"{random.randint(1000, 999999)}-{random.randint(1, 99):02d}",
     ]
+
     return random.choice(patterns)()
 
+
+def generate_jopari_bill_id(index: int) -> str:
+    patterns = [
+        lambda: f"J{random.randint(10**8, 10**9 - 1)}",
+        lambda: f"JP{random.randint(10**7, 10**8 - 1)}",
+        lambda: fake.bothify(text="JOP########").upper(),
+        lambda: fake.bothify(text="JP??######").upper(),
+    ]
+
+    return random.choice(patterns)()
 
 def generate_boost_records(boost_patient_claims):
     records = []
@@ -65,12 +77,28 @@ def generate_boost_records(boost_patient_claims):
             outstanding = round(random.uniform(0, billed), 2)
 
             boost_synthetic_id = f"BOOST-{claim_sid}-{i + 1:04d}"
-            bill_id = boost_synthetic_id
+
+            display_bill_id = generate_bill_id(claim_type, i + 1)
+
+            uses_jopari = random.choices(
+                population=[True, False],
+                weights=[25, 75],
+                k=1,
+            )[0]
+
+            bill_id = None
+            bill_id_jopari = None
+
+            if uses_jopari:
+                bill_id_jopari = generate_jopari_bill_id(i + 1)
+            else:
+                bill_id = display_bill_id
+            
 
             records.append({
 
                 "Synthetic_Id__c": boost_synthetic_id,
-                "Name": generate_bill_id(claim_type, i + 1),
+                "Name": display_bill_id,
 
                 "Patient_First_Name__c": claim["First_Name__c"],
                 "Patient_Last_Name__c": claim["Last_Name__c"],
@@ -83,7 +111,7 @@ def generate_boost_records(boost_patient_claims):
                 "Account_Number__c": fake.bothify(text="ACCT-########"),
 
                 "Bill_ID__c": bill_id,
-                "Bill_ID_Jopari__c": f"JOP-{bill_id}",
+                "Bill_ID_Jopari__c": bill_id_jopari,
 
                 "ARN_Status__c": random.choice(ARN_STATUSES),
                 "Status_to_Payer__c": fake.sentence(nb_words=6),
