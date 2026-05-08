@@ -39,6 +39,7 @@ from src.pipeline.boost import (
     resolve_boost_step,
     upsert_boost_step,
     update_boost_arn_payor_lookup_step,
+    update_missing_boost_uploaded_dates_step,
 )
 
 from src.pipeline.lines import (
@@ -192,6 +193,8 @@ def run_pipeline() -> None:
             boost_synthetic_ids,
         )
     )
+
+    update_missing_boost_uploaded_dates_step(context)
 
     # Deposits
     resolve_deposits_step(context)
