@@ -6,7 +6,7 @@ from src.config import (
 from src.generators.incoming_check_payments import generate_incoming_check_payment_records
 from src.loaders.salesforce import upsert_records, fetch_id_map
 from src.pipeline.helpers import print_results
-
+import random
 
 INCOMING_CHECK_PAYMENT_EXTERNAL_ID_FIELD = "Use_for_Transfer__c"
 
@@ -32,6 +32,13 @@ def resolve_incoming_check_payments_step(context) -> None:
     boost_id_map = context.get_id_map("boost")
     deposit_id_map = context.get_id_map("deposits")
     boost_patient_claim_id_map = context.get_id_map("boost_patient_claims")
+
+    arn_check_to_member_id_map = context.get_id_map("arn_checks_to_members")
+    arn_check_to_member_ids = (
+        list(arn_check_to_member_id_map.values())
+        if arn_check_to_member_id_map
+        else []
+    )
 
     if not boost_id_map:
         raise ValueError(
@@ -65,6 +72,12 @@ def resolve_incoming_check_payments_step(context) -> None:
         # Simple first-pass distribution.
         # Later, you can group payments by deposit/check date.
         record["fields"]["Deposit__c"] = deposit_ids[index % len(deposit_ids)]
+
+        # Populate the ARN Check to Member related list / Conga grid.
+        if arn_check_to_member_ids:
+            record["fields"]["ARN_Check_to_Member__c"] = arn_check_to_member_ids[
+                index % len(arn_check_to_member_ids)
+            ]
 
         if boost_patient_claim_synthetic_id and boost_patient_claim_id_map:
             boost_patient_claim_id = boost_patient_claim_id_map.get(

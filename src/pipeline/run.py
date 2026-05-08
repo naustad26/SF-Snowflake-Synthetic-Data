@@ -104,6 +104,13 @@ from src.pipeline.cases import (
     fetch_case_ids_step,
 )
 
+from src.pipeline.arn_checks_to_members import (
+    generate_arn_checks_to_members_step,
+    resolve_arn_checks_to_members_step,
+    upsert_arn_checks_to_members_step,
+    fetch_arn_check_to_member_ids_step,
+)
+
 def run_pipeline() -> None:
     set_seed(SEED)
 
@@ -124,6 +131,7 @@ def run_pipeline() -> None:
 
     generate_lines_step(context)
     generate_deposits_step(context)
+    generate_arn_checks_to_members_step(context)
     generate_incoming_check_payments_step(context)
 
     generate_arn_payor_master_step(context)
@@ -182,11 +190,6 @@ def run_pipeline() -> None:
     upsert_deposits_step(context)
     fetch_deposit_ids_step(context)
 
-    # Incoming Check Payments
-    resolve_incoming_check_payments_step(context)
-    upsert_incoming_check_payments_step(context)
-    fetch_incoming_check_payment_ids_step(context)
-
     # Lines
     resolve_lines_step(context)
     upsert_lines_step(context)
@@ -201,6 +204,16 @@ def run_pipeline() -> None:
 
     # Fetch clinic/client Account IDs
     fetch_all_account_ids_step(context)
+
+    # ARN Checks to Members
+    resolve_arn_checks_to_members_step(context)
+    upsert_arn_checks_to_members_step(context)
+    fetch_arn_check_to_member_ids_step(context)
+
+    # Incoming Check Payments
+    resolve_incoming_check_payments_step(context)
+    upsert_incoming_check_payments_step(context)
+    fetch_incoming_check_payment_ids_step(context)
 
     # Clinic/client Contacts
     resolve_contacts_step(context)
