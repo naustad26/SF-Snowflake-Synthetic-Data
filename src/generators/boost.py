@@ -116,8 +116,13 @@ def generate_boost_records(boost_patient_claims):
                 "ARN_Status__c": random.choice(ARN_STATUSES),
                 "Status_to_Payer__c": fake.sentence(nb_words=6),
 
+                "EDI_To_Boost__c": random.choices(
+                    population=[True, False],
+                    weights=[50, 50],
+                    k=1,
+                )[0],
+
                 "Sent_Date__c": fake.date_between(start_date="-365d", end_date="-30d").isoformat(),
-                # "Uploaded__c": fake.date_between(start_date="-365d", end_date="-30d").isoformat(),
                 "Last_Update__c": fake.date_between(start_date="-30d", end_date="today").isoformat(),
 
                 "Billed_Charges__c": billed,
