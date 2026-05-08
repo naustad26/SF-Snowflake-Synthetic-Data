@@ -1,3 +1,5 @@
+from multiprocessing import context
+
 from src.config import SEED, LOAD_TO_SALESFORCE
 from src.generators.base import set_seed
 from src.loaders.salesforce import fetch_id_map, get_salesforce_client
@@ -95,6 +97,13 @@ from src.pipeline.boost_ticket import (
     update_boost_ticket_lookup_step,
 )
 
+from src.pipeline.cases import (
+    generate_cases_step,
+    resolve_cases_step,
+    upsert_cases_step,
+    fetch_case_ids_step,
+)
+
 def run_pipeline() -> None:
     set_seed(SEED)
 
@@ -102,8 +111,6 @@ def run_pipeline() -> None:
 
     # Generate synthetic records
     generate_account_hierarchy_step(context)
-
-    # Separate non-clinic Account lane for payors / bill review companies
     generate_payor_accounts_step(context)
 
     generate_boost_accounts_step(context)
@@ -113,10 +120,11 @@ def run_pipeline() -> None:
     generate_boost_patient_claims_step(context)
     generate_boost_step(context)
     generate_boost_ticket_step(context)
-    generate_lines_step(context)
-    generate_incoming_check_payments_step(context)
+    generate_cases_step(context)
 
+    generate_lines_step(context)
     generate_deposits_step(context)
+    generate_incoming_check_payments_step(context)
 
     generate_arn_payor_master_step(context)
 
@@ -128,10 +136,10 @@ def run_pipeline() -> None:
 
     context.sf = get_salesforce_client()
 
-    # Boost Accounts first (dependency root)
+    # Boost Accounts first
     upsert_boost_accounts_step(context)
 
-    # IMPORTANT: requires boost_accounts ID map to exist
+    # Boost Patient Claims
     resolve_boost_patient_claims_step(context)
     upsert_boost_patient_claims_step(context)
 
@@ -150,6 +158,7 @@ def run_pipeline() -> None:
         )
     )
 
+    # Boost
     resolve_boost_step(context)
     upsert_boost_step(context)
 
@@ -193,6 +202,10 @@ def run_pipeline() -> None:
     # Fetch clinic/client Account IDs
     fetch_all_account_ids_step(context)
 
+    # Clinic/client Contacts
+    resolve_contacts_step(context)
+    upsert_contacts_step(context)
+
     # Payor / Bill Review Accounts
     resolve_payor_accounts_step(context)
     upsert_payor_accounts_step(context)
@@ -214,17 +227,19 @@ def run_pipeline() -> None:
     upsert_arn_payors_step(context)
     fetch_arn_payor_ids_step(context)
 
+    # Boost Tickets
     resolve_boost_ticket_step(context)
     upsert_boost_ticket_step(context)
     fetch_boost_ticket_ids_step(context)
     update_boost_ticket_lookup_step(context)
 
+    # Cases
+    resolve_cases_step(context)
+    upsert_cases_step(context)
+    fetch_case_ids_step(context)
+
     # Update Boost ARN Payor lookup
     update_boost_arn_payor_lookup_step(context)
-
-    # Contacts
-    resolve_contacts_step(context)
-    upsert_contacts_step(context)
 
     # Final Boost Account updates
     update_boost_account_lookup_fields_step(context)
