@@ -125,6 +125,13 @@ from src.pipeline.cpt_codes import (
     fetch_cpt_code_ids_step,
 )
 
+from src.pipeline.arn_fees import (
+    generate_arn_fees_step,
+    resolve_arn_fees_step,
+    upsert_arn_fees_step,
+    fetch_arn_fee_ids_step,
+)
+
 
 def run_pipeline() -> None:
     set_seed(SEED)
@@ -268,6 +275,12 @@ def run_pipeline() -> None:
     resolve_arn_payors_step(context)
     upsert_arn_payors_step(context)
     fetch_arn_payor_ids_step(context)
+
+    # ARN Fees
+    generate_arn_fees_step(context)
+    resolve_arn_fees_step(context)
+    upsert_arn_fees_step(context)
+    fetch_arn_fee_ids_step(context)
 
     # Boost Tickets
     resolve_boost_ticket_step(context)
