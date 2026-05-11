@@ -133,15 +133,22 @@ from src.pipeline.arn_fees import (
     fetch_arn_fee_ids_step,
 )
 
+from src.pipeline.leads import (
+    generate_leads_step,
+    upsert_leads_step,
+    fetch_lead_ids_step,
+)
+
 
 def run_pipeline() -> None:
     set_seed(SEED)
 
     context = PipelineContext()
 
-    generate_cpt_codes_step(context)
 
     # Generate synthetic records
+    generate_cpt_codes_step(context)
+    generate_leads_step(context)
     generate_account_hierarchy_step(context)
     generate_payor_accounts_step(context)
 
@@ -169,6 +176,10 @@ def run_pipeline() -> None:
         return
 
     context.sf = get_salesforce_client()
+
+    # Leads
+    upsert_leads_step(context)
+    fetch_lead_ids_step(context)
 
     # CPT Codes / reference data
     upsert_cpt_codes_step(context)
