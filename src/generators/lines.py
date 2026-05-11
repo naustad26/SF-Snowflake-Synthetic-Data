@@ -1,18 +1,19 @@
 import random
 from .base import fake
 
-
-CPT_CODES = [
-    ("97530", "Therapeutic Activities"),
-    ("97112", "Neuromuscular Re-education"),
-    ("97535", "Self-Care/Home Management Training"),
-    ("97140", "Manual Therapy"),
-    ("97110", "Therapeutic Exercise"),
-    ("97116", "Gait Training"),
-    ("97014", "Electrical Stimulation"),
-    ("97010", "Hot/Cold Packs"),
-    ("97542", "Wheelchair Management"),
-    ("97750", "Physical Performance Test"),
+COMMON_CPT_CODES = [
+    "97110",
+    "97112",
+    "97116",
+    "97140",
+    "97530",
+    "97010",
+    "97014",
+    "97035",
+    "97161",
+    "97162",
+    "97163",
+    "97164",
 ]
 
 MODIFIERS = ["GP", "GO", "GN"]
@@ -32,17 +33,16 @@ def generate_lines_records(boost_records):
 
     for boost in boost_records:
         boost_sid = boost["Synthetic_Id__c"]
-        boost_name = boost["Name"]
         dos = boost["DOS_Start__c"]
 
         line_count = random.randint(2, 6)
 
         selected_codes = random.sample(
-            CPT_CODES,
-            k=min(line_count, len(CPT_CODES))
+            COMMON_CPT_CODES,
+            k=min(line_count, len(COMMON_CPT_CODES))
         )
 
-        for i, (cpt_code, cpt_definition) in enumerate(selected_codes, start=1):
+        for i, cpt_code in enumerate(selected_codes, start=1):
             units = random.choices([1, 2, 3, 4], weights=[65, 20, 10, 5], k=1)[0]
 
             amount_charged = round(random.uniform(60, 180) * units, 2)
@@ -64,12 +64,7 @@ def generate_lines_records(boost_records):
 
                 "Date_of_Service__c": dos,
                 "Mod_Pkg__c": random.choice(MODIFIERS),
-                "Diagnosis_Pointer__c": "1",
-
-                # Store these only if you have text fields for them.
-                # Otherwise skip until CPT_Code__c lookup records exist.
-                # "CPT_Code_Text__c": cpt_code,
-                # "CPT_Code_Definition_Text__c": cpt_definition,
+                "Diagnosis_Pointer__c": random.choice(DIAGNOSIS_POINTERS),
 
                 "Units__c": units,
                 "Amount_Charged__c": amount_charged,
@@ -78,8 +73,7 @@ def generate_lines_records(boost_records):
                 "Pay_to_Member__c": pay_to_member,
 
                 "_boost_synthetic_id": boost_sid,
-                # "_cpt_code": cpt_code,
-                # "_cpt_definition": cpt_definition,
+                "_cpt_code": cpt_code,
             })
 
     return records

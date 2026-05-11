@@ -119,11 +119,19 @@ from src.pipeline.check_payments import (
     fetch_check_payment_ids_step,
 )
 
+from src.pipeline.cpt_codes import (
+    generate_cpt_codes_step,
+    upsert_cpt_codes_step,
+    fetch_cpt_code_ids_step,
+)
+
 
 def run_pipeline() -> None:
     set_seed(SEED)
 
     context = PipelineContext()
+
+    generate_cpt_codes_step(context)
 
     # Generate synthetic records
     generate_account_hierarchy_step(context)
@@ -153,6 +161,10 @@ def run_pipeline() -> None:
         return
 
     context.sf = get_salesforce_client()
+
+    # CPT Codes / reference data
+    upsert_cpt_codes_step(context)
+    fetch_cpt_code_ids_step(context)
 
     # Boost Accounts first
     upsert_boost_accounts_step(context)
