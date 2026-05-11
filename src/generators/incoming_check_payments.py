@@ -35,6 +35,9 @@ def _get_synthetic_id(record) -> str:
 def _get_meta(record, key: str, default=None):
     return record.get("meta", {}).get(key, default)
 
+def _is_denied_boost(boost_record) -> bool:
+    return _get_field(boost_record, "ARN_Status__c") == "Denied"
+
 
 def _safe_float(value, default=0.0) -> float:
     if value in (None, ""):
@@ -91,13 +94,27 @@ def generate_incoming_check_payment_records(
     payment_index = 0
 
     for boost in boost_records:
-        if random.random() > payment_probability:
+        is_denied = _is_denied_boost(boost)
+
+        effective_payment_probability = (
+            max(payment_probability, 0.85)
+            if is_denied
+            else payment_probability
+        )
+
+        if random.random() > effective_payment_probability:
             continue
 
-        payment_count = random.randint(
-            min_payments_per_boost,
-            max_payments_per_boost,
-        )
+        if is_denied:
+            payment_count = random.randint(
+                max(1, min_payments_per_boost),
+                max(1, max_payments_per_boost),
+            )
+        else:
+            payment_count = random.randint(
+                min_payments_per_boost,
+                max_payments_per_boost,
+            )
 
         if payment_count == 0:
             continue
