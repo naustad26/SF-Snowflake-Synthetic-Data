@@ -30,6 +30,7 @@ from src.pipeline.boost_patient_claims import (
     generate_boost_patient_claims_step,
     resolve_boost_patient_claims_step,
     upsert_boost_patient_claims_step,
+    update_boost_patient_claim_arn_payor_master_lookup_step,
 )
 
 from src.pipeline.exports import export_generated_records_step
@@ -275,6 +276,8 @@ def run_pipeline() -> None:
     resolve_arn_payors_step(context)
     upsert_arn_payors_step(context)
     fetch_arn_payor_ids_step(context)
+
+    update_boost_patient_claim_arn_payor_master_lookup_step(context)
 
     # ARN Fees
     generate_arn_fees_step(context)

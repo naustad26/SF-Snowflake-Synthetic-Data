@@ -59,8 +59,6 @@ def generate_boost_patient_claim_records(boost_accounts):
                 "DOI__c": doi.isoformat(),
                 "First_DOS__c": first_dos.isoformat(),
 
-                
-
                 "Total_Billed_Charges__c": round(random.uniform(500, 50000), 2),
                 "Bills__c": bill_count,
                 "Bills_Open__c": open_bill_count,
