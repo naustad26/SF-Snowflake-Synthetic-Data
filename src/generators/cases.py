@@ -170,27 +170,6 @@ def _generate_description(origin: str) -> str:
     )
 
 
-def _generate_recent_comment(origin: str) -> str:
-    comment_date = fake.date_between(start_date="-60d", end_date="today")
-    prefix = f"{comment_date.month}/{comment_date.day}"
-
-    comments = [
-        "reviewed related ticket and updated next steps.",
-        "member/provider response received and documented.",
-        "payer status reviewed; follow-up still needed.",
-        "payment details reviewed and require reconciliation.",
-        "documentation reviewed; waiting for payer response.",
-        "claim notes reviewed and ticket updated.",
-    ]
-
-    if origin == "Appeal":
-        comments.append("appeal documentation reviewed; follow-up date set.")
-
-    if origin == "Payment":
-        comments.append("payment/EOB reviewed; posting or reconciliation needed.")
-
-    return f"{prefix}- {random.choice(comments)}"
-
 
 def _select_contact_for_case(contacts):
     if not contacts:
@@ -259,7 +238,7 @@ def generate_case_records(
             synthetic_id = f"CASE-{boost_ticket_synthetic_id}-{case_number + 1:03d}"
 
             supplied_name = fake.name()
-            supplied_email = fake.email()
+            supplied_email = f"synthetic.case.{synthetic_id.lower()}@example.invalid"
 
             fields = {
                 "Synthetic_Id__c": synthetic_id,
@@ -270,14 +249,6 @@ def generate_case_records(
                 "Priority": random.choice(CASE_PRIORITIES),
 
                 "Description": _generate_description(origin),
-                "Most_Recent_Case_Comment__c": _generate_recent_comment(origin),
-                "Comments": random.choice([
-                    None,
-                    "Synthetic internal comment for sandbox case testing.",
-                    "Review related Boost Ticket before responding.",
-                    "Follow up with member/provider after payer update.",
-                ]),
-
                 "Follow_up_Date__c": _future_follow_up_date(),
 
                 "SuppliedName": supplied_name,

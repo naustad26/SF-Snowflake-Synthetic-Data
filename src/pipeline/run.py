@@ -119,6 +119,13 @@ from src.pipeline.check_payments import (
     fetch_check_payment_ids_step,
 )
 
+from src.pipeline.uploads import (
+    generate_uploads_step,
+    resolve_uploads_step,
+    upsert_uploads_step,
+    fetch_upload_ids_step,
+)
+
 def run_pipeline() -> None:
     set_seed(SEED)
 
@@ -129,6 +136,7 @@ def run_pipeline() -> None:
     generate_payor_accounts_step(context)
 
     generate_boost_accounts_step(context)
+    generate_uploads_step(context)
     generate_contacts_step(context)
     generate_payor_contacts_step(context)
 
@@ -215,6 +223,11 @@ def run_pipeline() -> None:
 
     # Fetch clinic/client Account IDs
     fetch_all_account_ids_step(context)
+
+    # Uploads
+    resolve_uploads_step(context)
+    upsert_uploads_step(context)
+    fetch_upload_ids_step(context)
 
     # ARN Checks to Members
     resolve_arn_checks_to_members_step(context)

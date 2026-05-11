@@ -36,24 +36,28 @@ ARN_STATUSES = [
     "Resubmitted Rejection",
 ]
 
-def generate_bill_id(claim_type: str, index: int) -> str:
+def generate_bill_id(claim_type: str, index: int, claim_sid: str) -> str:
+    claim_token = claim_sid.replace("BPC-", "").replace("-", "")[-6:]
+
     patterns = [
-        lambda: f"{random.randint(10**10, 10**12 - 1)}{claim_type}{index:02d}",
-        lambda: f"{claim_type}{random.randint(201700000, 202699999)}",
-        lambda: fake.bothify(text="??########").upper(),
-        lambda: f"T{random.randint(1000, 9999999999)}",
-        lambda: f"{random.randint(1000, 999999)}-{random.randint(1, 99):02d}",
+        lambda: f"{random.randint(10**8, 10**9 - 1)}{index:02d}",
+        lambda: f"{claim_type[:2].upper()}{claim_token}{index:02d}",
+        lambda: fake.bothify(text="??######").upper() + f"{index:02d}",
+        lambda: f"T{claim_token}{index:02d}",
+        lambda: f"{claim_token}-{index:02d}",
     ]
 
     return random.choice(patterns)()
 
 
-def generate_jopari_bill_id(index: int) -> str:
+def generate_jopari_bill_id(index: int, claim_sid: str) -> str:
+    claim_token = claim_sid.replace("BPC-", "").replace("-", "")[-6:]
+
     patterns = [
-        lambda: f"J{random.randint(10**8, 10**9 - 1)}",
-        lambda: f"JP{random.randint(10**7, 10**8 - 1)}",
-        lambda: fake.bothify(text="JOP########").upper(),
-        lambda: fake.bothify(text="JP??######").upper(),
+        lambda: f"J{claim_token}{index:02d}",
+        lambda: f"JP{claim_token}{index:02d}",
+        lambda: fake.bothify(text="JOP######").upper() + f"{index:02d}",
+        lambda: fake.bothify(text="JP??####").upper() + f"{index:02d}",
     ]
 
     return random.choice(patterns)()
@@ -78,7 +82,7 @@ def generate_boost_records(boost_patient_claims):
 
             boost_synthetic_id = f"BOOST-{claim_sid}-{i + 1:04d}"
 
-            display_bill_id = generate_bill_id(claim_type, i + 1)
+            display_bill_id = generate_bill_id(claim_type, i + 1, claim_sid)
 
             uses_jopari = random.choices(
                 population=[True, False],
@@ -90,7 +94,7 @@ def generate_boost_records(boost_patient_claims):
             bill_id_jopari = None
 
             if uses_jopari:
-                bill_id_jopari = generate_jopari_bill_id(i + 1)
+                bill_id_jopari = generate_jopari_bill_id(i + 1, claim_sid)
             else:
                 bill_id = display_bill_id
             
